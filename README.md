@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  Button,
-  Col,
-  IconButton,
-  Input,
-  Row,
-  SelectPicker,
-} from "rsuite";
+import { Button, Col, IconButton, Input, Row, SelectPicker } from "rsuite";
 import api from "../../../utility/api";
 import { useMutation } from "react-query";
 import { useModal } from "../../../context/ModalContext";
@@ -14,21 +7,16 @@ import PlusIcon from "@rsuite/icons/Plus";
 import MinusIcon from "@rsuite/icons/Minus";
 import "./style.scss";
 import { Occupationprop } from "./type";
-import { FormattedData } from "./type";
+import { FormattedDataProp } from "./type";
 import { Contractprop } from "./type";
 
 const DataTable = () => {
   const { openModal } = useModal();
   const [contractList, setContractList] = useState<Contractprop[]>([]);
   const [contractCode, setContractCode] = useState<string | null>(null);
-  const [occupationData, setOccupationData] = useState<Occupationprop[]>([
-    {
-      screen: "",
-      command: "",
-      workflow: "",
-      topicid: "",
-    },
-  ]);
+  const [occupationData, setOccupationData] = useState<Occupationprop[]>([]);
+
+  console.log(occupationData)
 
   const getContractList = useMutation(
     [`contracts/getAllContracts`],
@@ -81,7 +69,6 @@ const DataTable = () => {
     });
     setOccupationData(changeField);
   };
-
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!contractCode) {
@@ -93,26 +80,29 @@ const DataTable = () => {
       });
     } else {
       const formattedData = occupationData.reduce(
-        (acc: FormattedData, field) => {
-          if (!acc[field.screen]) {
-            acc[field.screen] = {};
+        (acc: FormattedDataProp, field) => {
+          if (field.label != null && !acc[field.label]) {
+            acc[field.label] = {};
           }
 
-          acc[field.screen][field.command] = {
-            workflow_name: field.workflow,
-            topicId: field.topicid,
-          };
+          if (field.label != null && !acc[field.label][field.screen]) {
+            acc[field.label][field.screen] = {};
+          }
+
+          if (field.label != null) {
+            acc[field.label][field.screen][field.command] = {
+              workflow_name: field.workflow,
+              topicId: field.topicid,
+            };
+          }
 
           return acc;
         },
-        {} as FormattedData
+        {} as FormattedDataProp
       );
-
-      const jsonDATA = { contractCode: formattedData };
-      console.log(JSON.stringify(jsonDATA));
+      console.log(JSON.stringify(formattedData));
     }
   };
-
   const handleReset = () => {
     const resetData = occupationData.map((ele) => {
       ele.screen = "";
@@ -148,15 +138,25 @@ const DataTable = () => {
         value={contractCode}
         onChange={(value) => {
           setContractCode(value);
+          setOccupationData((prev: Occupationprop[]) => [
+            ...prev,
+            {
+              label: value,
+              screen: "",
+              command: "",
+              workflow: "",
+              topicid: "",
+            },
+          ]);
         }}
       />
 
-      {contractCode && <p className="contact_code">{contractCode}</p>}
       <form onSubmit={handleSubmit}>
         <div className="inputInner">
           {occupationData?.map((item: Occupationprop, i: number) => {
             return (
               <div key={i}>
+                <p className="contact_code">{item.label}</p>
                 <Row style={{ marginTop: "15px" }}>
                   <Col lg={10} md={10} style={{ marginTop: "15px" }}>
                     <div className="eligibilityRuleBasis_dropdown">
@@ -217,13 +217,14 @@ const DataTable = () => {
                   </Col>
 
                   <Col lg={4} md={4} className="addPlusButton">
-                    {occupationData?.length == i + 1 ? (
+                    {/* {occupationData?.length == i + 1 ? ( */}
                       <IconButton
                         style={{ marginRight: 5 }}
                         onClick={() => {
                           setOccupationData((prev: Occupationprop[]) => [
                             ...prev,
                             {
+                              label:item.label,
                               screen: "",
                               command: "",
                               workflow: "",
@@ -233,9 +234,9 @@ const DataTable = () => {
                         }}
                         icon={<PlusIcon />}
                       />
-                    ) : (
+                    {/* ) : (
                       ""
-                    )}
+                    )} */}
 
                     {occupationData.length != 1 && (
                       <IconButton
@@ -246,32 +247,33 @@ const DataTable = () => {
                         icon={<MinusIcon />}
                       ></IconButton>
                     )}
-                  </Col>
+                  </Col> 
                 </Row>
               </div>
             );
           })}
         </div>
 
-        <div className="button_div">
-          <Button
-            type="submit"
-            appearance="ghost"
-            className="mx-2"
-            style={{ width: 150 }}
-            onClick={handleReset}
-          >
-            RESET
-          </Button>
-          <Button
-            type="submit"
-            appearance="primary"
-            className="mx-2"
-            style={{ width: 150 }}
-          >
-            SUBMIT
-          </Button>
-        </div>
+        {occupationData.length > 0 && (
+          <div className="button_div">
+            <Button
+              appearance="ghost"
+              className="mx-2"
+              style={{ width: 150 }}
+              onClick={handleReset}
+            >
+              RESET
+            </Button>
+            <Button
+              type="submit"
+              appearance="primary"
+              className="mx-2"
+              style={{ width: 150 }}
+            >
+              SUBMIT
+            </Button>
+          </div>
+        )}
       </form>
     </>
   );
